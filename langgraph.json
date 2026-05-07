@@ -1,0 +1,7 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "seagate_stategraph_agent": "./src/agents/multi_agent_state_graph.py:create_seagate_stategraph_agent_dev"
+  },
+  "env": ".env"
+}
