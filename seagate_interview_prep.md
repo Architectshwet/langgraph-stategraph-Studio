@@ -9,7 +9,7 @@ This guide breaks down the core technologies you implemented in the Seagate Agen
 **Our Solution:** We built a stateful, multi-node graph using **LangGraph**.
 - **Supervisor (Router Node):** Uses strict prompt guardrails to classify the user's intent. In our **V2 architecture**, it now employs **Intent Locking**, which persists the specialist handoff throughout the session to minimize re-classification latency.
 - **Specialist Nodes (DMR / SSL):** Tool-bound agents with isolated message history (`partial_normal_dmr_history`, `ssl_history`) to prevent context bleed.
-**Interview Talking Point:** *"I architected a two-stage routing system. Initially, I used a standard Supervisor-Specialist handoff, but I optimized it in the second iteration by implementing **Session-Based Intent Locking**. This ensures that once an intent is identified, the specialist 'locks' the conversation, providing a faster, more focused response without re-triggering the supervisor's classification logic."*
+- **Interview Talking Point:** *"I architected a two-stage routing system. Initially, I used a standard Supervisor-Specialist handoff, but I optimized it in the second iteration by implementing - **Session-Based Intent Locking**. This ensures that once an intent is identified, the specialist 'locks' the conversation, providing a faster, more focused response without re-triggering the supervisor's classification logic."*
 
 ---
 
@@ -20,7 +20,7 @@ This guide breaks down the core technologies you implemented in the Seagate Agen
 - This WebSocket is designed as a client-agnostic API endpoint, meaning both web browsers and external external clients/microservices can connect to it.
 - We utilize LangGraph's asynchronous streaming `global_agent.astream(..., stream_mode=["custom", "updates"])`.
 - As the LLM generates tokens or emits custom progress updates (`_emit_progress`), they are pushed instantly to the frontend or external caller.
-**Interview Talking Point:** *"I migrated the backend from HTTP to WebSockets to eliminate polling overhead. I engineered the WebSocket endpoint to be client-agnostic, allowing both web browsers and external API clients to connect and stream granular micro-progress events, drastically reducing perceived latency."*
+- **Interview Talking Point:** *"I migrated the backend from HTTP to WebSockets to eliminate polling overhead. I engineered the WebSocket endpoint to be client-agnostic, allowing both web browsers and external API clients to connect and stream granular micro-progress events, drastically reducing perceived latency."*
 
 ---
 
@@ -31,7 +31,7 @@ This guide breaks down the core technologies you implemented in the Seagate Agen
 - **Dual-Channel Authentication:** We built a flexible authentication layer capable of securely serving different types of clients:
   - **Browser UI:** The token is automatically saved in an **HTTP-Only, SameSite=Lax Cookie** to prevent XSS (Cross-Site Scripting) attacks.
   - **External API Clients:** External systems can authenticate via standard `Authorization: Bearer <token>` headers or by passing the token as a query parameter (`?token=`) during the WebSocket handshake.
-**Interview Talking Point:** *"I designed a stateless JWT architecture with a dual-channel authentication flow. By securely reading from HTTP-Only cookies for browsers while simultaneously accepting standard Bearer tokens or query parameters for external clients, our server can instantly authenticate any incoming WebSocket or HTTP request without ever querying a session database."*
+- **Interview Talking Point:** *"I designed a stateless JWT architecture with a dual-channel authentication flow. By securely reading from HTTP-Only cookies for browsers while simultaneously accepting standard Bearer tokens or query parameters for external clients, our server can instantly authenticate any incoming WebSocket or HTTP request without ever querying a session database."*
 
 ---
 
@@ -41,7 +41,7 @@ This guide breaks down the core technologies you implemented in the Seagate Agen
 - Before the web server starts accepting HTTP traffic, it enters the `lifespan` block.
 - Here, we establish the **Postgres Connection Pool**, connect to **Redis**, and compile the LangGraph `global_agent`.
 - When the server shuts down, the context yields back and safely tears down all database connections.
-**Interview Talking Point:** *"To optimize production performance, I shifted all heavy resource initialization into the FastAPI Lifespan context. This ensures the application is 100% 'warm' and ready to process LLM logic the millisecond the server comes online."*
+- **Interview Talking Point:** *"To optimize production performance, I shifted all heavy resource initialization into the FastAPI Lifespan context. This ensures the application is 100% 'warm' and ready to process LLM logic the millisecond the server comes online."*
 
 ---
 
@@ -50,7 +50,7 @@ This guide breaks down the core technologies you implemented in the Seagate Agen
 **Our Solution:** We implemented an asynchronous connection pool (`AsyncConnectionPool`).
 - At startup, the server opens a set number of database connections (e.g., 10) and keeps them alive in memory.
 - When an agent calls a database tool, the tool "borrows" a connection, executes the SQL, and instantly returns it to the pool.
-**Interview Talking Point:** *"I integrated asynchronous PostgreSQL connection pooling. This protects our database from connection exhaustion during traffic spikes and drastically reduces the latency of our agent's transactional queries."*
+- **Interview Talking Point:** *"I integrated asynchronous PostgreSQL connection pooling. This protects our database from connection exhaustion during traffic spikes and drastically reduces the latency of our agent's transactional queries."*
 
 ---
 
@@ -59,7 +59,7 @@ This guide breaks down the core technologies you implemented in the Seagate Agen
 **Our Solution:** We built a 100% non-blocking architecture.
 - We used `Asyncpg` for Postgres, `AsyncRedisStore` for caching, and `ainvoke`/`astream` for Langchain.
 - Whenever the server makes a network request, it yields control back to the Python `asyncio` event loop, allowing the same thread to serve other WebSocket users simultaneously.
-**Interview Talking Point:** *"Concurrency was a major priority. I ensured the entire stack—from the FastAPI routing down to the LangGraph execution and database drivers—was fully asynchronous. This allows a single Python process to efficiently orchestrate hundreds of concurrent LLM sessions."*
+- **Interview Talking Point:** *"Concurrency was a major priority. I ensured the entire stack—from the FastAPI routing down to the LangGraph execution and database drivers—was fully asynchronous. This allows a single Python process to efficiently orchestrate hundreds of concurrent LLM sessions."*
 
 ---
 
@@ -68,7 +68,7 @@ This guide breaks down the core technologies you implemented in the Seagate Agen
 **Our Solution:**
 - **Thread History (Postgres Checkpointer):** We attached `AsyncPostgresSaver` to the LangGraph execution. It saves the exact state of the graph after every node. If the server crashes, the agent resumes seamlessly.
 - **Global Session State (Redis Store):** We used `AsyncRedisStore` to track cross-thread metadata (like the user's channel, UI architecture, and JWT role) with microsecond latency.
-**Interview Talking Point:** *"To make the agent resilient, I decoupled the state from the application memory. I used a Postgres Checkpointer for durable, transactional conversation history, and a Redis Store for ultra-fast, global session state tracking."*
+- **Interview Talking Point:** *"To make the agent resilient, I decoupled the state from the application memory. I used a Postgres Checkpointer for durable, transactional conversation history, and a Redis Store for ultra-fast, global session state tracking."*
 
 ---
 
@@ -79,4 +79,4 @@ This guide breaks down the core technologies you implemented in the Seagate Agen
 - **Volume Mounts & Hot-Reloading:** We combined `uvicorn --reload` with Docker volume bind mounts (`- ./src:/app/src`). *Why is this important?* `uvicorn` watches for file changes *inside* the container. Without the volume mount bridging your host computer's code to the container, `uvicorn` would never see your local edits, and hot-reloading would fail!
 - **Image Optimization (Slim & Layers):** In the `Dockerfile`, we used `python:3.12-slim` to drastically reduce the base image size. We also chained Linux commands (`apt-get update && apt-get install ... && rm -rf /var/lib/apt/lists/*`) into a single `RUN` layer to minimize image bloat and eliminate residual cache files.
 - **Ultra-Fast Packaging:** Instead of standard `pip`, we leveraged `uv` (`uv pip install --system -e .`) inside Docker for blazing-fast, system-level dependency resolution.
-**Interview Talking Point:** *"I containerized our LangGraph service using a highly optimized, slim Docker image, leveraging 'uv' for rapid dependency resolution and layer caching. Because we utilize managed cloud databases, our Docker container is completely stateless. For developer velocity, I bridged local host volumes to the container, allowing 'uvicorn' to hot-reload code changes instantaneously without rebuilding the image."*
+- **Interview Talking Point:** *"I containerized our LangGraph service using a highly optimized, slim Docker image, leveraging 'uv' for rapid dependency resolution and layer caching. Because we utilize managed cloud databases, our Docker container is completely stateless. For developer velocity, I bridged local host volumes to the container, allowing 'uvicorn' to hot-reload code changes instantaneously without rebuilding the image."*

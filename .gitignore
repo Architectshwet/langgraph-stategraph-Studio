@@ -8,6 +8,7 @@ __pycache__/
 venv/
 env/
 ENV/
+venv_wafer/
 
 # Packaging/build artifacts
 build/
@@ -50,11 +51,6 @@ Thumbs.db
 *.db
 *.sqlite3
 
-# Project specific documents and scripts
-wafer_minutes_of_meetings.docx
-SOC Purging Guidelines.docx
-PartialRelease stepbystep procedure.docx
-partial_release_full.txt
-OCAP_Image_Upload_Failure.docx
-Manual Resolution Steps.docx
-extract_docx.py
+# Project specific
+dump/
+seagate_stategraph.png
