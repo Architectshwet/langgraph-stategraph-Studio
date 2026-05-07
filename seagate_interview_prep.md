@@ -14,13 +14,14 @@ This guide breaks down the core technologies you implemented in the Seagate Agen
 ---
 
 ## 2. Real-Time WebSockets (`@ws_router.websocket`)
-**The Challenge:** Waiting 10+ seconds for a complete LLM generation over standard HTTP results in terrible User Experience (UX). Standard HTTP polling is highly inefficient.
-**Our Solution:** We replaced HTTP endpoints with a full-duplex **WebSocket** connection.
-- A persistent TCP connection is kept open between the client and the FastAPI server.
-- This WebSocket is designed as a client-agnostic API endpoint, meaning both web browsers and external external clients/microservices can connect to it.
-- We utilize LangGraph's asynchronous streaming `global_agent.astream(..., stream_mode=["custom", "updates"])`.
-- As the LLM generates tokens or emits custom progress updates (`_emit_progress`), they are pushed instantly to the frontend or external caller.
-- **Interview Talking Point:** *"I migrated the backend from HTTP to WebSockets to eliminate polling overhead. I engineered the WebSocket endpoint to be client-agnostic, allowing both web browsers and external API clients to connect and stream granular micro-progress events, drastically reducing perceived latency."*
+**The Challenge:** Delivering real-time LLM responses with minimal latency. 
+- **Standard HTTP POST:** Each request requires a full TCP/TLS handshake, incurring significant overhead for every user interaction. 
+- **HTTP SSE (Server-Sent Events):** While it supports one-way streaming, it is restricted to the HTTP/1.1 or HTTP/2 protocol limits and lacks the full-duplex flexibility needed for complex agentic feedback loops.
+**Our Solution:** We implemented a high-performance **WebSocket** architecture.
+- **Protocol Switching:** The client initiates a single HTTP request with an `Upgrade: websocket` header. Once the handshake is complete, the connection is upgraded to a persistent, full-duplex TCP stream.
+- **Zero-Latency Streaming:** We utilize LangGraph's asynchronous generator `global_agent.astream(..., stream_mode=["custom", "updates"])`.
+- **Client-Agnostic Design:** The endpoint is architected as a universal API, allowing both modern browsers and external microservices to maintain a single persistent connection for streaming granular micro-progress events and tokens.
+**Interview Talking Point:** *"I chose WebSockets over standard HTTP or SSE to eliminate the handshake overhead of repeated requests. By upgrading the protocol, we maintain a persistent TCP pipe that allows our agent to push tokens and progress indicators instantly. This architecture drastically reduced perceived latency and provided the foundation for a 'real-time' feeling AI interaction, while remaining client-agnostic for future microservice integrations."*
 
 ---
 
